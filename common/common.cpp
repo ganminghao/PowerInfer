@@ -671,6 +671,13 @@ bool gpt_params_parse_ex(int argc, char ** argv, gpt_params & params) {
                 break;
             }
             sparams.grammar = argv[i];
+        }
+         else if (arg == "--n-test-prompts") {
+            if (++i >= argc) {
+                invalid_param = true;
+                break;
+            }
+            params.n_prompts = std::stoi(argv[i]);
         } else if (arg == "--grammar-file") {
             if (++i >= argc) {
                 invalid_param = true;
