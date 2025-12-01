@@ -6,9 +6,11 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include "global.h"
 
 int main(int argc, char ** argv) {
     gpt_params params;
+    init_global_states();
 
     if (argc == 1 || argv[1][0] == '-') {
         printf("usage: %s MODEL_PATH [PROMPT] [PARALLEL] [LEN] [N_THREAD] [VRAM_BUDGET] [NGL]\n" , argv[0]);
@@ -260,6 +262,15 @@ int main(int argc, char ** argv) {
             __func__, n_decode, (t_main_end - t_main_start) / 1000000.0f, n_decode / ((t_main_end - t_main_start) / 1000000.0f));
 
     llama_print_timings(ctx);
+
+    Global_States * state = get_global_states();
+    state->cpu_time_records.push_back(state->cpu_time_total);
+    state->token_time_records.push_back((double(t_main_end - t_main_start) / 1e3));
+    
+    printf("exporting data\n");
+    export_data_batch(get_global_states(), n_parallel, (n_decode / ((t_main_end - t_main_start) / 1000000.0f)));
+    cleanup_global_states();
+
 
     fprintf(stderr, "\n");
 

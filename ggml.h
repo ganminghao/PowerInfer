@@ -284,6 +284,36 @@
 #define GGML_UNREACHABLE() ((void) 0)
 #endif
 
+#define USE_NVTX 0
+
+#ifdef USE_NVTX
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include <nvtx3/nvToolsExt.h>
+#pragma GCC diagnostic pop
+
+static const uint32_t colors[]   = { 0xff00ff00, 0xff0000ff, 0xffffff00, 0xffff00ff,
+                                     0xff00ffff, 0xffff0000, 0xffffffff, 0xff808080 };
+static const int      num_colors = sizeof(colors) / sizeof(uint32_t);
+
+static inline nvtxRangeId_t nvtx_init(const int tid, const char * op, const char * dev) {
+    nvtxEventAttributes_t attr;
+    memset(&attr, 0, sizeof(attr));
+    attr.version     = NVTX_VERSION;
+    attr.size        = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    attr.colorType   = NVTX_COLOR_ARGB;
+    attr.messageType = NVTX_MESSAGE_TYPE_ASCII;
+
+    char message[256];
+    attr.color = colors[tid % num_colors];
+    snprintf(message, sizeof(message), "[t%d] %s_%s", tid, op, dev);
+    attr.message.ascii = message;
+
+    return nvtxRangeStartEx(&attr);
+}
+#endif
+
+
 // used to copy the number of elements and stride in bytes of tensors into local variables.
 // main purpose is to reduce code duplication and improve readability.
 //

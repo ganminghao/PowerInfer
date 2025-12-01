@@ -9,13 +9,13 @@ model="/root/autodl-tmp/models/PowerInfer/prosparse-llama-2-7b-gguf/prosparse-ll
 
 
 # ---------------- Inference Settings -----------------
-vram_budget=7
+vram_budget=10
 threads=12
 seed=1234
 ctx_size=1024
 max_tokens=128
 file="/root/autodl-tmp/dataset/ShareGPT/processed_prompts.txt"
-n_prompts=20
+n_prompts=5
 
 common_opts=(
     -m "$model"
@@ -37,4 +37,6 @@ usage() {
 }
 
 bin=./build/bin/bench
-"$bin" "${common_opts[@]}"
+nsys profile --trace=cuda,nvtx "$bin" "${common_opts[@]}"
+# "$bin" "${common_opts[@]}"
+

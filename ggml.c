@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <signal.h>
+#include "global.h"
 
 // #define _GNU_SOURCE
 // #include <sched.h>
@@ -14762,7 +14763,6 @@ static void ggml_compute_forward_mul_mat_axpy_head(
 }
 
 /////////////////////////////////
-
 static void ggml_ensure_tensor_data_at_memory(struct ggml_tensor * tensor) {
 #if defined(GGML_USE_CUBLAS)
     if (tensor->backend == GGML_BACKEND_CPU) {
@@ -14796,7 +14796,13 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
     // Make sure src[0] (weight for binary ops) is on CPU to avoid any weight transfer
     GGML_ASSERT((tensor->src[0] == NULL || tensor->src[0]->backend == GGML_BACKEND_CPU) && "weight should be on the CPU to compute on the CPU");
 #endif // GGML_USE_CUBLAS
-
+#ifdef USE_NVTX
+    nvtxRangeId_t range = nvtx_init(params->ith, tensor->name, "CPU");
+#endif
+    // if (params->ith == 0){
+    //     printf("compute forward %s op %d\n", ggml_get_name(tensor), tensor->op);
+    // }
+    double op_time = ggml_time_us();
     switch (tensor->op) {
         case GGML_OP_DUP:
             {
@@ -15138,6 +15144,42 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
                 GGML_ASSERT(false);
             } break;
     }
+    
+    // if (tensor->op != GGML_OP_MUL_MAT_SPARSE && tensor->op != GGML_OP_AXPY) {
+    //     return;
+    // }
+    op_time = (ggml_time_us() - op_time) / 1000.0; // in ms
+    Global_States * state = get_global_states();
+
+    // char key_buffer[256];
+    // snprintf(key_buffer, sizeof(key_buffer), "%s_%d", ggml_get_name(tensor), (int)tensor->op); 
+    // const char* key = key_buffer; 
+    
+    ggml_critical_section_start();
+
+    state->cpu_time_total += op_time / params->nth;
+
+    // double current_max_time = op_max_time_map_reader(state, key);
+    // int current_finished_count = (int)finished_threads_map_reader(state, key); 
+    
+    // if (op_time > current_max_time) {
+    //     op_max_time_map_writer(state, key, op_time);
+    //     current_max_time = op_time;
+    // }
+
+    // current_finished_count++;
+    // finished_threads_map_writer(state, key, current_finished_count);
+
+    // if (current_finished_count == params->nth) {
+    //     state->cpu_time_total += current_max_time; 
+    //     finished_threads_map_writer(state, key, 0);
+    //     op_max_time_map_writer(state, key, 0.0);
+    // }
+
+    ggml_critical_section_end();
+#ifdef USE_NVTX
+    nvtxRangeEnd(range);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "global.h"
 
 #if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
 #include <signal.h>
@@ -101,6 +102,7 @@ static void sigint_handler(int signo) {
 #endif
 
 int main(int argc, char ** argv) {
+    init_global_states();
     gpt_params params;
     g_params = &params;
 
@@ -579,11 +581,15 @@ int main(int argc, char ** argv) {
                 }
 
                 LOG("eval: %s\n", LOG_TOKENS_TOSTR_PRETTY(ctx, embd).c_str());
-
-                if (llama_decode(ctx, llama_batch_get_one(&embd[i], n_eval, n_past, 0))) {
-                    LOG_TEE("%s : failed to eval\n", __func__);
-                    return 1;
-                }
+                double token_time_start = llama_time_us();
+                llama_decode(ctx, llama_batch_get_one(&embd[i], n_eval, n_past, 0));
+                double token_time = llama_time_us() - token_time_start;
+                Global_States * state = get_global_states();
+                state->decode_cnt++;
+                state->cpu_time_records.push_back(state->cpu_time_total);
+                state->token_time_records.push_back(token_time / 1e3);
+                state->cpu_time_total = 0.0;
+                
 
                 n_past += n_eval;
 
@@ -830,6 +836,10 @@ int main(int argc, char ** argv) {
 
     llama_sampling_free(ctx_sampling);
     llama_backend_free();
+
+    printf("exporting data\n");
+    export_data(get_global_states(), "tpot.csv");
+    cleanup_global_states();
 
 #ifndef LOG_DISABLE_LOGS
     LOG_TEE("Log end\n");

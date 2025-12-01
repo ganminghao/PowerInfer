@@ -4537,6 +4537,7 @@ static __global__ void dequantize_mul_mat_axpy_sparse_pro(const void * __restric
     }
 }
 
+
 template <int qk, int qr, dequantize_kernel_t dequantize_kernel>
 static __global__ void dequantize_mul_mat_axpy_sparse(const void * __restrict__ vx, const dfloat * __restrict__ y, float * __restrict__ dst, const int ncols, const int nrows, int *lst, float *idx) {
     // qk = quantized weights per x block
@@ -9216,6 +9217,9 @@ void ggml_cuda_free_scratch() {
 }
 
 bool ggml_cuda_compute_forward(struct ggml_compute_params * params, struct ggml_tensor * tensor) {
+// #ifdef USE_NVTX
+//     nvtxRangeId_t range = nvtx_init(params->ith, tensor->name, "CUDA");
+// #endif
     if (!g_cublas_loaded) return false;
 
     ggml_cuda_func_t func;
@@ -9340,6 +9344,9 @@ bool ggml_cuda_compute_forward(struct ggml_compute_params * params, struct ggml_
     }
     func(tensor->src[0], tensor->src[1], tensor);
 
+// #ifdef USE_NVTX
+//     nvtxRangeEnd(range);
+// #endif
     // CUDA_CHECK(cudaDeviceSynchronize());
 
     return true;
