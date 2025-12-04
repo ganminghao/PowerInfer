@@ -110,11 +110,10 @@ int main(int argc, char ** argv) {
     const int n_ctx    = llama_n_ctx(ctx);
 
     LOG_TEE("\n%s: n_len = %d, n_ctx = %d, n_batch = %d, n_parallel = %d, n_kv_req = %d\n", __func__, n_len, n_ctx, ctx_params.n_batch, n_parallel, n_kv_req);
-
     // make sure the KV cache is big enough to hold all the prompt and generated tokens
     if (n_kv_req > n_ctx) {
-        LOG_TEE("%s: error: n_kv_req (%d) > n_ctx, the required KV cache size is not big enough\n", __func__,  n_kv_req);
-        LOG_TEE("%s:        either reduce n_parallel or increase n_ctx\n", __func__);
+        printf("%s: error: n_kv_req (%d) > n_ctx, the required KV cache size is not big enough\n", __func__,  n_kv_req);
+        printf("%s:        either reduce n_parallel or increase n_ctx\n", __func__);
         return 1;
     }
 
@@ -141,10 +140,16 @@ int main(int argc, char ** argv) {
     // llama_decode will output logits only for the last token of the prompt
     batch.logits[batch.n_tokens - 1] = true;
 
+    const auto startp = ggml_time_us();
     if (llama_decode(ctx, batch) != 0) {
         LOG_TEE("%s: llama_decode() failed\n", __func__);
         return 1;
     }
+    const auto endp = ggml_time_us();
+    Global_States * state = get_global_states();
+    state->cpu_time_records.push_back(state->cpu_time_total);
+    state->token_time_records.push_back((endp - startp) / 1e3);
+    state->cpu_time_total = 0.0;
 
     // assign the system KV cache to all parallel sequences
     // this way, the parallel sequences will "reuse" the prompt tokens without having to copy them
@@ -169,6 +174,8 @@ int main(int argc, char ** argv) {
     int n_decode = 0;
 
     const auto t_main_start = ggml_time_us();
+
+    int64_t total_time = 0.0;
 
     while (n_cur <= n_len) {
         // prepare the next batch
@@ -240,10 +247,16 @@ int main(int argc, char ** argv) {
         n_cur += 1;
 
         // evaluate the current batch with the transformer model
+        const auto start = ggml_time_us();
         if (llama_decode(ctx, batch)) {
             fprintf(stderr, "%s : failed to eval, return code %d\n", __func__, 1);
             return 1;
         }
+        const auto end = ggml_time_us();
+        Global_States * state = get_global_states();
+        state->cpu_time_records.push_back(state->cpu_time_total);
+        state->token_time_records.push_back((end - start) / 1e3);
+        state->cpu_time_total = 0.0;
     }
 
     LOG_TEE("\n");
@@ -263,12 +276,12 @@ int main(int argc, char ** argv) {
 
     llama_print_timings(ctx);
 
-    Global_States * state = get_global_states();
-    state->cpu_time_records.push_back(state->cpu_time_total);
-    state->token_time_records.push_back((double(t_main_end - t_main_start) / 1e3));
-    
+    // Global_States * state = get_global_states();
+    // state->cpu_time_records.push_back(state->cpu_time_total);
+    // state->token_time_records.push_back(double(total_time) / 1e3);
+    const llama_timings timings = llama_get_timings(ctx);
     printf("exporting data\n");
-    export_data_batch(get_global_states(), n_parallel, (n_decode / ((t_main_end - t_main_start) / 1000000.0f)));
+    export_data_batch(get_global_states(), n_parallel, 1e3 / timings.t_p_eval_ms * timings.n_p_eval, n_decode / ((t_main_end - t_main_start) / 1000000.0f));
     cleanup_global_states();
 
 

@@ -39,7 +39,7 @@ Global_States* get_global_states(void);
 void init_global_states(void);  
 void cleanup_global_states(void);  
 void export_data(Global_States* states, char * name);
-void export_data_batch(Global_States* states, int n_parallel, float t_s);
+void export_data_batch(Global_States* states, int n_parallel, float pre_ts, float dec_ts);
 
 double op_max_time_map_reader(Global_States* state, const char* key);
 void op_max_time_map_writer(Global_States* state, const char* key, double value);

@@ -14796,9 +14796,9 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
     // Make sure src[0] (weight for binary ops) is on CPU to avoid any weight transfer
     GGML_ASSERT((tensor->src[0] == NULL || tensor->src[0]->backend == GGML_BACKEND_CPU) && "weight should be on the CPU to compute on the CPU");
 #endif // GGML_USE_CUBLAS
-#ifdef USE_NVTX
-    nvtxRangeId_t range = nvtx_init(params->ith, tensor->name, "CPU");
-#endif
+// #ifdef USE_NVTX
+//     nvtxRangeId_t range = nvtx_init(0, ".", "CPU");
+// #endif
     // if (params->ith == 0){
     //     printf("compute forward %s op %d\n", ggml_get_name(tensor), tensor->op);
     // }
@@ -15177,9 +15177,9 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
     // }
 
     ggml_critical_section_end();
-#ifdef USE_NVTX
-    nvtxRangeEnd(range);
-#endif
+// #ifdef USE_NVTX
+//     nvtxRangeEnd(range);
+// #endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////

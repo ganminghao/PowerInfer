@@ -1,16 +1,16 @@
 #!/bin/bash
-./build/bin/main -m /root/autodl-tmp/models/PowerInfer/prosparse-llama-2-7b-gguf/prosparse-llama-2-7b.gguf \
- -n 128 \
- -t 12  \
- -p "Bubble sort algorithm in python:" \
- --vram-budget 12
+# ./build/bin/main -m /root/autodl-tmp/models/prosparse-llama-2-7b-gguf/prosparse-llama-2-7b.gguf \
+#  -n 128 \
+#  -t 12  \
+#  -p "Bubble sort algorithm in python:" \
+#  --vram-budget 12
 
 export CUDA_VISIBLE_DEVICES=0
 
 # rm /root/autodl-tmp/models/PowerInfer/prosparse-llama-2-7b-gguf/prosparse-llama-2-7b.gguf.generated.gpuidx
 
 # ---------------- Model Paths -----------------
-model="/root/autodl-tmp/models/PowerInfer/prosparse-llama-2-7b-gguf/prosparse-llama-2-7b.gguf"
+model="/root/autodl-tmp/models/prosparse-llama-2-7b-gguf/prosparse-llama-2-7b.gguf"
 
 prompt="Bubble sort algorithm in python: \n \`\`\`python"
 # prompt="# Dijkstra's shortest path algorithm in CPP (4 spaces indentation) + complexity analysis:\n\n"
@@ -19,7 +19,7 @@ prompt="Explain the theory of relativity in simple terms for elementary school s
 # prompt=" Summarize the main ideas of Jeff Walker's Product Launch Formula into bullet points as it pertains to a growth marketing agency implementing these strategies and tactics for their clients..."
 
 
-vram_budget=10
+vram_budget=5
 threads=12
 seed=1234
 ctx_size=2048

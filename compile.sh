@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cmake -S . -B build -DLLAMA_CUBLAS=ON
-cmake --build build --config Release
+cmake --build build --config Release -j"$(nproc)" --target batched
 
 # release_dir=build_rel
 # debug_dir=build

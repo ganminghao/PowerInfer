@@ -284,7 +284,7 @@
 #define GGML_UNREACHABLE() ((void) 0)
 #endif
 
-#define USE_NVTX 0
+#define USE_NVTX 1
 
 #ifdef USE_NVTX
 #pragma GCC diagnostic push

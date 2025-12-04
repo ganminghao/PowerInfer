@@ -73,7 +73,7 @@ void export_data(Global_States* states, char * fname) {
     }
 }
 
-void export_data_batch(Global_States* states, int batch_size, float t_s) {
+void export_data_batch(Global_States* states, int batch_size, float pre_ts, float dec_ts) {
     std::lock_guard<std::mutex> lock(g_mutex);
     // Open the batch.csv file in append mode
     FILE* fp = fopen("batch.csv", "a+");
@@ -82,17 +82,22 @@ void export_data_batch(Global_States* states, int batch_size, float t_s) {
         fseek(fp, 0, SEEK_END);
         if (ftell(fp) == 0) {
             // Write the header
-            fprintf(fp, "batchsize,throughput,CPU-latency-ratio\n");
+            fprintf(fp, "batchsize,mode,throughput,CPU-latency-ratio\n");
         }
 
-        // Calculate throughput and CPU-latency-ratio
-        float cpu_latency_ratio = 0.0;
-        if (!states->cpu_time_records.empty() && !states->token_time_records.empty()) {
-            cpu_latency_ratio = states->cpu_time_records[0] / states->token_time_records[0];
+        // fprintf(fp, "%d,%s,%f,%f\n", batch_size, "Prefill", pre_ts, states->cpu_time_records[0]/states->token_time_records[0]);
+        size_t max_size = std::max(states->cpu_time_records.size(), states->token_time_records.size());
+
+        double cpu_time = 0.0;
+        double total_time = 0.0;
+        // Write data row by row
+        for (size_t i = 1; i < max_size; i++) {
+            cpu_time   += states->cpu_time_records[i];
+            total_time += states->token_time_records[i];
         }
 
         // Append the data
-        fprintf(fp, "%d,%f,%f\n", batch_size, t_s, cpu_latency_ratio);
+        fprintf(fp, "%d,%s,%f,%f\n", batch_size, "Decode", dec_ts, cpu_time/total_time);
 
         fclose(fp);
     }

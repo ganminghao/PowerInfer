@@ -1,0 +1,7 @@
+batchsize,mode,throughput,CPU-latency-ratio
+1,Decode,12.732978,0.624063
+4,Decode,23.822990,0.626191
+8,Decode,28.541321,0.657760
+12,Decode,31.091469,0.663734
+16,Decode,33.204727,0.673208
+20,Decode,31.923721,0.681638
